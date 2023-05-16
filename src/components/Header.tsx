@@ -29,7 +29,7 @@ function Header() {
             className="dropdown-content menu rounded-box menu-compact mt-3 w-52 bg-neutral-100 p-2 text-base-content shadow"
           >
             <li>
-              <a>Products</a>
+              <Link href="/products/create">Products</Link>
             </li>
             <li>
               <a>Recipes</a>
