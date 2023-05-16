@@ -1,5 +1,6 @@
 import { signIn, signOut, useSession } from "next-auth/react";
 import Image from "next/image";
+import Link from "next/link";
 
 function Header() {
   const { data: sessionData } = useSession();
@@ -7,7 +8,7 @@ function Header() {
   return (
     <div className="navbar bg-neutral text-neutral-content">
       <div className="flex-none">
-        <div className="dropdown dropdown-bottom">
+        <div className="dropdown-bottom dropdown">
           <label tabIndex={0} className="btn-ghost btn-square btn">
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -25,7 +26,7 @@ function Header() {
           </label>
           <ul
             tabIndex={1}
-            className="dropdown-content menu rounded-box menu-compact mt-3 w-52 p-2 text-base-content shadow"
+            className="dropdown-content menu rounded-box menu-compact mt-3 w-52 bg-neutral-100 p-2 text-base-content shadow"
           >
             <li>
               <a>Products</a>
@@ -40,12 +41,14 @@ function Header() {
         </div>
       </div>
       <div className="flex-1">
-        <a className="btn-ghost btn text-xl normal-case">Groceria</a>
+        <Link href="/" className="btn-ghost btn text-xl normal-case">
+          Groceria
+        </Link>
       </div>
-      <div className="dropdown-end dropdown">
+      <div className="dropdown dropdown-end">
         {sessionData?.user ? (
           <>
-            <label tabIndex={0} className="btn-ghost btn-circle avatar btn">
+            <label tabIndex={0} className="btn-ghost btn-circle avatar btn ">
               <div className="w-10 rounded-full">
                 <Image
                   width="40"
@@ -57,7 +60,7 @@ function Header() {
             </label>
             <ul
               tabIndex={1}
-              className="dropdown-content menu rounded-box menu-compact mt-3 w-52 p-2 text-base-content shadow"
+              className="dropdown-content menu rounded-box menu-compact mt-3 w-52 bg-neutral-100 p-2 text-base-content shadow"
             >
               <li>
                 <a>Profile</a>
