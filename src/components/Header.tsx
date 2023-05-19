@@ -5,6 +5,13 @@ import Link from "next/link";
 function Header() {
   const { data: sessionData } = useSession();
 
+  const handleClickMenuItem = (
+    e: React.MouseEvent<HTMLLIElement, MouseEvent>
+  ) => {
+    const el = e.target as HTMLUListElement;
+    el?.blur();
+  };
+
   return (
     <div className="navbar bg-neutral text-neutral-content">
       <div className="flex-none">
@@ -28,7 +35,7 @@ function Header() {
             tabIndex={1}
             className="dropdown-content menu rounded-box menu-compact mt-3 w-52 bg-neutral-100 p-2 text-base-content shadow"
           >
-            <li>
+            <li onClick={handleClickMenuItem}>
               <Link href="/products/create">Products</Link>
             </li>
             <li>
