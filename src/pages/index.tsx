@@ -3,8 +3,8 @@ import Head from "next/head";
 // import Link from "next/link";
 // import { signIn, signOut, useSession } from "next-auth/react";
 
-// import { api } from "y/utils/api";
-import HomeHero from "y/components/HomeHero";
+// import { api } from "~/utils/api";
+import HomeHero from "~/components/HomeHero";
 
 // const DemoStuff = () => {
 //   const hello = api.example.hello.useQuery({ text: "from tRPC" });

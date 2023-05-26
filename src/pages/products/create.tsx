@@ -1,8 +1,9 @@
 import { type Product, type Section } from "@prisma/client";
 // import { useSession } from "next-auth/react";
 import { useEffect, useRef, useState } from "react";
-import FormPage from "y/components/FormPage";
-import { api } from "y/utils/api";
+import Form2PanelLayout from "~/components/FormCols2";
+import FormPage from "~/components/FormPage";
+import { api } from "~/utils/api";
 
 type SortType =
   | "productDescending"
@@ -152,169 +153,175 @@ function Create() {
 
   return (
     <FormPage>
-      <div className="m-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <div className="card prose rounded-box col-span-1 h-[600px] bg-neutral-100 p-5">
-          <h2 className="">Existing Products</h2>
-          <div className="block overflow-scroll rounded-md border bg-primary-content shadow-inner">
-            <table className="m-0 w-full">
-              <thead className="sticky top-0 shadow">
-                <tr>
-                  <th className="bg-primary-content p-2">
-                    <button
-                      className="font-bold"
-                      onClick={() => handleSortProduct()}
-                    >
-                      Product
-                    </button>
-                  </th>
-                  <th className="bg-primary-content p-2">
-                    <button
-                      className="font-bold"
-                      onClick={() => {
-                        handleSortSections();
-                      }}
-                    >
-                      Section
-                    </button>
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="h-96 overflow-hidden">
-                {tableData?.map((product, idx) => (
-                  <tr key={idx}>
-                    <td className="p-1">
+      <Form2PanelLayout
+        leftPanel={
+          <>
+            <h2 className="">Existing Products</h2>
+            <div className="block overflow-scroll rounded-md border bg-primary-content shadow-inner">
+              <table className="m-0 w-full">
+                <thead className="sticky top-0 shadow">
+                  <tr>
+                    <th className="bg-primary-content p-2">
                       <button
-                        onClick={() => handleEditProduct(product)}
-                        className="max-w-[12rem] justify-start truncate rounded-md border border-neutral-200 px-2 py-1 text-sm font-semibold normal-case hover:bg-neutral-100"
+                        className="font-bold"
+                        onClick={() => handleSortProduct()}
                       >
-                        {product.title}
+                        Product
                       </button>
-                    </td>
-                    <td className="p-1 pr-7">
-                      <div className="w-max max-w-[8rem] truncate whitespace-nowrap rounded-md bg-neutral-50 px-3 py-1 text-left font-semibold">
-                        {getSectionName(product.sectionId)}
-                      </div>
-                    </td>
+                    </th>
+                    <th className="bg-primary-content p-2">
+                      <button
+                        className="font-bold"
+                        onClick={() => {
+                          handleSortSections();
+                        }}
+                      >
+                        Section
+                      </button>
+                    </th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-        <div className="card prose rounded-box col-span-1 min-h-[600px] items-start bg-neutral-100 p-5">
-          <h2 className="mt-0">{editProductId ? "Edit" : "Create"} Product</h2>
-          <div className="grid h-full w-full items-start gap-4">
-            <div className="grid w-full gap-4">
-              <label className="input-group-md input-group w-full">
-                <span>Title</span>
-                <input
-                  type="text"
-                  placeholder="Spaghetti (dried)"
-                  className="input-bordered input input-md w-full"
-                  value={productTitle}
-                  onChange={(e) => {
-                    setProductTitle(e.target.value);
-                  }}
-                />
-              </label>
-              <label className="input-group-md input-group w-full">
-                <span>Section</span>
-                <select
-                  ref={sectionOptions}
-                  defaultValue="Choose..."
-                  className="select-bordered select max-w-[13rem]"
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    if (val === "Choose...") setSectionId("");
-                    else if (val === "Create...") {
-                      setNewSection(true);
-                      setSectionId(undefined);
-                      return;
-                    } else {
-                      setSectionId(val);
-                      setNewSection(false);
-                    }
-                  }}
-                >
-                  <option className="font-light" value="Choose...">
-                    Choose...
-                  </option>
-                  <option className="font-light">Create...</option>
-                  {sections?.map((section: Section, idx) => (
-                    <option key={idx} value={section.id}>
-                      {section.title}
-                    </option>
+                </thead>
+                <tbody className="overflow-hidden">
+                  {tableData?.map((product, idx) => (
+                    <tr key={idx}>
+                      <td className="p-1">
+                        <button
+                          onClick={() => handleEditProduct(product)}
+                          className="max-w-[12rem] justify-start truncate rounded-md border border-neutral-200 px-2 py-1 text-sm font-semibold normal-case hover:bg-neutral-100"
+                        >
+                          {product.title}
+                        </button>
+                      </td>
+                      <td className="p-1 pr-7">
+                        <div className="w-max max-w-[8rem] truncate whitespace-nowrap rounded-md bg-neutral-50 px-3 py-1 text-left font-semibold">
+                          {getSectionName(product.sectionId)}
+                        </div>
+                      </td>
+                    </tr>
                   ))}
-                </select>
-              </label>
-              {newSection ? (
+                </tbody>
+              </table>
+            </div>
+          </>
+        }
+        rightPanel={
+          <>
+            <h2 className="mt-0">
+              {editProductId ? "Edit" : "Create"} Product
+            </h2>
+            <div className="grid h-full w-full items-start justify-stretch gap-4">
+              <div className="grid w-full gap-4">
                 <label className="input-group-md input-group w-full">
-                  <span className="whitespace-nowrap">New Section</span>
+                  <span>Title</span>
                   <input
                     type="text"
-                    placeholder="Pet Food Section"
+                    placeholder="Spaghetti (dried)"
                     className="input-bordered input input-md w-full"
-                    value={newSectionTitle}
+                    value={productTitle}
                     onChange={(e) => {
-                      setNewSectionTitle(e.target.value);
+                      setProductTitle(e.target.value);
                     }}
                   />
                 </label>
-              ) : (
-                ""
-              )}
-              <div className="rounded-lg border">
-                <div className="rounded-t-lg bg-neutral-200 p-2">
-                  <label className="prose-sm">
-                    Purchased in amounts which last a long time (E.g. Salt):
+                <label className="input-group-md input-group w-full">
+                  <span>Section</span>
+                  <select
+                    ref={sectionOptions}
+                    defaultValue="Choose..."
+                    className="select-bordered select max-w-[13rem]"
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val === "Choose...") setSectionId("");
+                      else if (val === "Create...") {
+                        setNewSection(true);
+                        setSectionId(undefined);
+                        return;
+                      } else {
+                        setSectionId(val);
+                        setNewSection(false);
+                      }
+                    }}
+                  >
+                    <option className="font-light" value="Choose...">
+                      Choose...
+                    </option>
+                    <option className="font-light">Create...</option>
+                    {sections?.map((section: Section, idx) => (
+                      <option key={idx} value={section.id}>
+                        {section.title}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                {newSection ? (
+                  <label className="input-group-md input-group w-full">
+                    <span className="whitespace-nowrap">New Section</span>
+                    <input
+                      type="text"
+                      placeholder="Pet Food Section"
+                      className="input-bordered input input-md w-full"
+                      value={newSectionTitle}
+                      onChange={(e) => {
+                        setNewSectionTitle(e.target.value);
+                      }}
+                    />
+                  </label>
+                ) : (
+                  ""
+                )}
+                <div className="rounded-lg border">
+                  <div className="rounded-t-lg bg-neutral-200 p-2">
+                    <label className="prose-sm">
+                      Purchased in amounts which last a long time (E.g. Salt):
+                    </label>
+                  </div>
+                  <label className="label cursor-pointer p-2">
+                    <span className="label-text">
+                      Include reminder cue to check stock
+                    </span>
+                    <input
+                      type="checkbox"
+                      checked={checkStock}
+                      onChange={() => {
+                        setCheckStock((p) => !p);
+                      }}
+                      className="checkbox checkbox-md"
+                    />
                   </label>
                 </div>
-                <label className="label cursor-pointer p-2">
-                  <span className="label-text">
-                    Include reminder cue to check stock
-                  </span>
-                  <input
-                    type="checkbox"
-                    checked={checkStock}
-                    onChange={() => {
-                      setCheckStock((p) => !p);
-                    }}
-                    className="checkbox checkbox-md"
-                  />
-                </label>
+                <button
+                  className="btn-success btn w-full"
+                  onClick={() => {
+                    if (newSectionTitle) {
+                      // On success we then run the operation to handle save,
+                      // which takes the sectionId for the new section.
+                      createSection.mutate({
+                        title: newSectionTitle,
+                      });
+                    } else if (sectionId) {
+                      handleSave(sectionId);
+                    }
+                  }}
+                  disabled={!validateSave()}
+                >
+                  Save
+                </button>
               </div>
-              <button
-                className="btn-success btn w-full"
-                onClick={() => {
-                  if (newSectionTitle) {
-                    // On success we then run the operation to handle save,
-                    // which takes the sectionId for the new section.
-                    createSection.mutate({
-                      title: newSectionTitle,
-                    });
-                  } else if (sectionId) {
-                    handleSave(sectionId);
-                  }
-                }}
-                disabled={!validateSave()}
-              >
-                Save
-              </button>
+              <div className="self-end justify-self-end">
+                <button
+                  className="btn-error btn"
+                  disabled={!editProductId}
+                  onClick={() => {
+                    handleDelete();
+                  }}
+                >
+                  Delete
+                </button>
+              </div>
             </div>
-            <div className="self-end justify-self-end">
-              <button
-                className="btn-error btn"
-                disabled={!editProductId}
-                onClick={() => {
-                  handleDelete();
-                }}
-              >
-                Delete
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
+          </>
+        }
+      />
     </FormPage>
   );
 }

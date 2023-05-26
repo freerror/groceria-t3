@@ -2,10 +2,10 @@ import { type AppType } from "next/app";
 import { type Session } from "next-auth";
 import { SessionProvider } from "next-auth/react";
 
-import { api } from "y/utils/api";
+import { api } from "~/utils/api";
 
-import "y/styles/globals.css";
-import Header from "y/components/Header";
+import "~/styles/globals.css";
+import Header from "~/components/Header";
 
 const MyApp: AppType<{ session: Session | null }> = ({
   Component,
