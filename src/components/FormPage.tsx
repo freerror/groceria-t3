@@ -1,6 +1,6 @@
 import { type ReactElement } from "react";
 
-function FormPage(props: { children: ReactElement }) {
+function FormPage(props: { children: ReactElement[] | ReactElement | string }) {
   return (
     <div className="m-4">
       <div className="m-auto max-w-6xl">{props.children}</div>

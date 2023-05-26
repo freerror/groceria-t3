@@ -73,11 +73,29 @@ model Section {
 }
 
 model Product {
-    id         String   @id @default(cuid())
-    createdAt  DateTime @default(now())
-    updateddAt DateTime @updatedAt
-    title      String   @unique
-    section    Section? @relation(fields: [sectionId], references: [id])
-    checkStock Boolean  @default(false)
-    sectionId  String?
+    id              String            @id @default(cuid())
+    createdAt       DateTime          @default(now())
+    updateddAt      DateTime          @updatedAt
+    title           String            @unique
+    section         Section?          @relation(fields: [sectionId], references: [id])
+    checkStock      Boolean           @default(false)
+    sectionId       String?
+    RecipeRelations RecipeRelations[]
+}
+
+model RecipeRelations {
+    recipe    Recipe  @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+    recipeId  String
+    product   Product @relation(fields: [productId], references: [id])
+    productId String
+
+    @@id([recipeId, productId])
+}
+
+model Recipe {
+    id              String            @id @default(cuid())
+    createdAt       DateTime          @default(now())
+    updateddAt      DateTime          @updatedAt
+    title           String            @unique
+    RecipeRelations RecipeRelations[]
 }
