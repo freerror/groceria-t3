@@ -41,7 +41,7 @@ function Header() {
             <li onClick={handleClickMenuItem}>
               <Link href="/recipes/create">Recipes</Link>
             </li>
-            <li>
+            <li onClick={handleClickMenuItem}>
               <Link href="/plan/plan">Plan Groceries</Link>
             </li>
           </ul>
