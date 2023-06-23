@@ -1,15 +1,15 @@
 import { type ReactElement } from "react";
 
 function FormCols2(props: {
-  topPanel?: ReactElement;
+  panel?: ReactElement;
   leftPanel?: ReactElement;
   rightPanel?: ReactElement;
 }) {
   return (
-    <div className="m-0 grid grid-cols-1 justify-center gap-3 sm:m-2 sm:grid-cols-2">
-      {props.topPanel ? (
+    <div className="m-0 my-1 grid grid-cols-1 justify-center gap-3 sm:m-2 sm:grid-cols-2">
+      {props.panel ? (
         <div className="card prose rounded-box col-span-2 h-[600px] max-w-none bg-neutral-100 p-5">
-          {props.topPanel}
+          {props.panel}
         </div>
       ) : (
         ""
