@@ -1,3 +1,4 @@
+import { type Product } from "@prisma/client";
 import Image from "next/image";
 import { type ReactElement, useState } from "react";
 import FormCols2 from "~/components/FormCols2";
@@ -65,14 +66,39 @@ function Section(props: {
   );
 }
 
+type CountableProduct = { count: number } & Product;
+
 function Plan() {
   const [section, setSection] = useState<SectionNames>("recipes");
-  const { data: recipes } = api.recipe.getAll.useQuery();
-  const { data: recipeProducts } = api.recipeRelations.getAll.useQuery();
+  const [chosenRecipes, setChosenRecipes] = useState<string[]>([]);
+  const [chosenProduct, setChosenProducts] = useState<Product[]>([]);
+  const recipeProducts = api.recipeRelations.getAll.useQuery().data || [];
   const products = api.product.getAll.useQuery().data || [];
+  const recipes = api.recipe.getAll.useQuery().data || [];
 
   function handleNav(section: SectionNames) {
     setSection(section);
+  }
+  function handleChooseRecipe(recipe: string): void {
+    setChosenRecipes((prev) => [...prev, recipe]);
+  }
+  function handleAddRecipeProducts(recipeId: string) {
+    setChosenProducts((prev) => {
+      const newProducts = [
+        ...(recipeProducts
+          .filter((rel) => rel.recipeId === recipeId)
+          .map((rel) =>
+            products.find((prod) => prod.id === rel.productId)
+          ) as Product[]),
+        ...prev,
+      ];
+      newProducts.sort((a, b) => a.title.localeCompare(b.title));
+      return newProducts;
+    });
+  }
+
+  function handleRemoveRecipeProducts(recipeId: string) {
+    console.log(recipeId);
   }
 
   return (
@@ -97,7 +123,7 @@ function Plan() {
         </ul>
       </div>
       <FormCols2
-        topPanel={
+        panel={
           <>
             {section === "recipes" ? (
               <Section
@@ -105,20 +131,21 @@ function Plan() {
                 nextSection="products"
                 setSection={setSection}
               >
-                {recipes?.map((recipe, idx) => {
-                  const ingreds: string[] = [];
+                {recipes.map((recipe, idx) => {
+                  const ingreds: Product[] = [];
                   recipeProducts
                     ?.filter((rel) => rel.recipeId === recipe.id)
                     .forEach((rel) => {
-                      ingreds.push(
-                        (
-                          products.find(
-                            (prod) => prod.id === rel.productId
-                          ) || { title: "" }
-                        ).title
+                      const found = products.find(
+                        (prod) => prod.id === rel.productId
                       );
+                      if (found) ingreds.push(found);
                     });
-                  ingreds.sort((a, b) => a.localeCompare(b));
+                  ingreds.sort((a, b) => a.title.localeCompare(b.title));
+                  const ingredTitles: string[] = ingreds.map((ing) =>
+                    ing ? ing.title : "Error"
+                  );
+
                   return (
                     <div
                       key={idx}
@@ -132,20 +159,40 @@ function Plan() {
                           height={280}
                         />
                       </figure>
-                      <div className="flex flex-shrink flex-grow flex-col items-start justify-start overflow-hidden pl-2">
+                      <div className="flex flex-shrink flex-grow flex-col items-start justify-start overflow-hidden px-1">
                         <div className="w-full">
                           <h3 className="m-0 truncate whitespace-nowrap">
                             {recipe.title}
                           </h3>
                         </div>
-                        <div className="mb-2 h-full w-full overflow-scroll pr-2">
+                        <div className="mb-2 h-full w-full overflow-scroll rounded-lg pl-1 pr-2 pt-2 shadow-inner">
                           <p className="m-0 text-xs font-thin">
-                            {ingreds.join(", ") + "."}
+                            {ingredTitles.join(", ") + "."}
                           </p>
                         </div>
-                        <button className="btn-primary btn-sm btn mb-2 ml-auto mr-2 mt-auto w-[80px]">
-                          Choose
-                        </button>
+                        {chosenRecipes.includes(recipe.id) ? (
+                          <button
+                            className="btn-error btn-sm btn mb-2 ml-auto mr-2 mt-auto w-[80px]"
+                            onClick={() => {
+                              setChosenRecipes((prev) =>
+                                prev.filter((r) => r != recipe.id)
+                              );
+                              // handleRemoveRecipeProducts(recipe.id);
+                            }}
+                          >
+                            Remove
+                          </button>
+                        ) : (
+                          <button
+                            className="btn-success btn-sm btn mb-2 ml-auto mr-2 mt-auto w-[80px]"
+                            onClick={() => {
+                              handleChooseRecipe(recipe.id);
+                              handleAddRecipeProducts(recipe.id);
+                            }}
+                          >
+                            Choose
+                          </button>
+                        )}
                       </div>
                     </div>
                   );
@@ -161,7 +208,9 @@ function Plan() {
                 previousSection="recipes"
                 setSection={setSection}
               >
-                Stuff
+                {chosenProduct.map((prod, idx) => {
+                  return <div key={idx}>{prod.title}</div>;
+                })}
               </Section>
             ) : (
               ""
@@ -177,6 +226,45 @@ function Plan() {
             ) : (
               ""
             )}
+          </>
+        }
+      />
+
+      <FormCols2
+        panel={
+          <>
+            <h2>Chosen Meals</h2>
+            <div className="mb-4 flex h-full flex-col gap-4 overflow-scroll rounded-2xl border p-3 shadow-inner">
+              {chosenRecipes.length <= 0 ? (
+                <label className="m-2 rounded-lg border p-3 text-center text-lg font-bold">
+                  No meals chosen
+                </label>
+              ) : (
+                ""
+              )}
+              <ul className="m-0 pl-0">
+                {recipes
+                  .filter((recipe) => chosenRecipes.includes(recipe.id))
+                  .map((recipe, idx) => (
+                    <li
+                      key={idx}
+                      className="m-2 flex list-none flex-row rounded-lg border bg-primary-content p-3 text-lg font-bold"
+                    >
+                      <div className="flex-grow pl-3">{recipe.title}</div>
+                      <button
+                        className="btn-error btn-sm btn w-[80px]"
+                        onClick={() =>
+                          setChosenRecipes((prev) =>
+                            prev.filter((r) => r != recipe.id)
+                          )
+                        }
+                      >
+                        Remove
+                      </button>
+                    </li>
+                  ))}
+              </ul>
+            </div>
           </>
         }
       />
