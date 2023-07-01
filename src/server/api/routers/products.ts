@@ -4,7 +4,11 @@ import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 
 export const productRouter = createTRPCRouter({
   getAll: protectedProcedure.query(({ ctx }) => {
-    return ctx.prisma.product.findMany();
+    return ctx.prisma.product.findMany({
+      include: {
+        section: true,
+      },
+    });
   }),
   create: protectedProcedure
     .input(

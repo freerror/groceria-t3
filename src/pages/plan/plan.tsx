@@ -1,6 +1,9 @@
 import { type Product } from "@prisma/client";
+import { type Section } from "@prisma/client";
 import Image from "next/image";
-import { type ReactElement, useState } from "react";
+import { type ReactElement, useState, useEffect } from "react";
+import ReactMarkdown from "react-markdown";
+import gfm from "remark-gfm";
 import FormCols2 from "~/components/FormCols2";
 import FormPage from "~/components/FormPage";
 import { api } from "~/utils/api";
@@ -27,6 +30,8 @@ function NavLink(props: {
   );
 }
 
+const Checkbox = () => <input type="checkbox" />;
+
 function Section(props: {
   title: string;
   nextSection?: SectionNames;
@@ -39,7 +44,7 @@ function Section(props: {
       <div>
         <h2 className="mt-0">{props.title}</h2>
       </div>
-      <div className="mb-4 flex h-full flex-col gap-4 overflow-scroll rounded-2xl border p-3 shadow-inner">
+      <div className="mb-4 flex h-full flex-col gap-3 overflow-scroll rounded-2xl border p-3 shadow-inner">
         {props.children}
       </div>
       <div className="flex flex-row gap-2 self-end">
@@ -66,15 +71,29 @@ function Section(props: {
   );
 }
 
-type CountableProduct = { count: number } & Product;
+type CountableProduct = { count: number } & Product & {
+    section: Section | null;
+  };
 
 function Plan() {
   const [section, setSection] = useState<SectionNames>("recipes");
   const [chosenRecipes, setChosenRecipes] = useState<string[]>([]);
-  const [chosenProduct, setChosenProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<CountableProduct[]>([]);
+
+  const productData = api.product.getAll.useQuery().data || [];
   const recipeProducts = api.recipeRelations.getAll.useQuery().data || [];
-  const products = api.product.getAll.useQuery().data || [];
   const recipes = api.recipe.getAll.useQuery().data || [];
+
+  useEffect(() => {
+    if (products.length === 0) {
+      setProducts(
+        productData.map((prod) => ({
+          count: 0,
+          ...prod,
+        }))
+      );
+    }
+  }, [products.length, productData]);
 
   function handleNav(section: SectionNames) {
     setSection(section);
@@ -82,28 +101,85 @@ function Plan() {
   function handleChooseRecipe(recipe: string): void {
     setChosenRecipes((prev) => [...prev, recipe]);
   }
-  function handleAddRecipeProducts(recipeId: string) {
-    setChosenProducts((prev) => {
-      const newProducts = [
-        ...(recipeProducts
-          .filter((rel) => rel.recipeId === recipeId)
-          .map((rel) =>
-            products.find((prod) => prod.id === rel.productId)
-          ) as Product[]),
-        ...prev,
-      ];
-      newProducts.sort((a, b) => a.title.localeCompare(b.title));
-      return newProducts;
-    });
+  function handleUpdateProductsFromRecipes(
+    recipeId: string,
+    increment: 1 | -1 = 1
+  ) {
+    const recProducts = recipeProducts
+      .filter((rel) => rel.recipeId === recipeId)
+      .map((rel) => rel.productId);
+    const updates = recProducts.reduce<{ [key: string]: number }>((acc, id) => {
+      acc[id] = (acc[id] || 0) + increment;
+      return acc;
+    }, {});
+    handleUpdateProducts(updates);
   }
 
-  function handleRemoveRecipeProducts(recipeId: string) {
-    console.log(recipeId);
+  function handleUpdateProducts(updates: { [key: string]: number }) {
+    setProducts((prev) =>
+      prev.map((prod) => ({
+        ...prod,
+        count: prod.count + (updates[prod.id] || 0),
+      }))
+    );
+  }
+
+  function generateGroceryList() {
+    const currentDate = new Date();
+    const formattedDate = `${currentDate.getFullYear()}-${String(
+      currentDate.getMonth() + 1
+    ).padStart(2, "0")}-${String(currentDate.getDate()).padStart(
+      2,
+      "0"
+    )} ${String(currentDate.getHours()).padStart(2, "0")}:${String(
+      currentDate.getMinutes()
+    ).padStart(2, "0")}`;
+    const chosenProducts = products.filter((prod) => prod.count > 0);
+    const sectionData = chosenProducts.map((prod) => prod.section) as Section[];
+    const sections = sectionData.filter(
+      (section, idx, self) => idx === self.findIndex((t) => t.id === section.id)
+    );
+    sections.sort((a, b) => b.id.localeCompare(a.id));
+    const markdown =
+      `## Shopping List ${formattedDate}\n\n` +
+      sections
+        .map(
+          (sect) =>
+            `### ${sect.title}\n${chosenProducts
+              .filter((prod) => prod.sectionId === sect.id)
+              .map(
+                (prod) =>
+                  `* [ ] ${prod.title} (${prod.count})${
+                    prod.checkStock ? " _**check stock**_" : ""
+                  }`
+              )
+              .join("\n")}`
+        )
+        .join("\n\n");
+
+    return (
+      <>
+        <button
+          className="btn-outline btn-sm btn w-1/5 self-center"
+          onClick={(e) => {
+            void navigator.clipboard.writeText(markdown);
+            const btn = e.target as HTMLElement;
+            btn.innerText = "COPIED";
+          }}
+        >
+          Copy
+        </button>
+        <h1 className="mb-0">Groceries</h1>
+        <ReactMarkdown remarkPlugins={[gfm]} components={{ input: Checkbox }}>
+          {markdown}
+        </ReactMarkdown>
+      </>
+    );
   }
 
   return (
     <FormPage>
-      <div className="breadcrumbs text-sm">
+      <div className="not-prose breadcrumbs text-sm">
         <ul>
           <li>
             <NavLink current={section} section="recipes" onClick={handleNav}>
@@ -136,7 +212,7 @@ function Plan() {
                   recipeProducts
                     ?.filter((rel) => rel.recipeId === recipe.id)
                     .forEach((rel) => {
-                      const found = products.find(
+                      const found = productData.find(
                         (prod) => prod.id === rel.productId
                       );
                       if (found) ingreds.push(found);
@@ -177,7 +253,7 @@ function Plan() {
                               setChosenRecipes((prev) =>
                                 prev.filter((r) => r != recipe.id)
                               );
-                              // handleRemoveRecipeProducts(recipe.id);
+                              handleUpdateProductsFromRecipes(recipe.id, -1);
                             }}
                           >
                             Remove
@@ -187,7 +263,7 @@ function Plan() {
                             className="btn-success btn-sm btn mb-2 ml-auto mr-2 mt-auto w-[80px]"
                             onClick={() => {
                               handleChooseRecipe(recipe.id);
-                              handleAddRecipeProducts(recipe.id);
+                              handleUpdateProductsFromRecipes(recipe.id);
                             }}
                           >
                             Choose
@@ -203,13 +279,43 @@ function Plan() {
             )}
             {section === "products" ? (
               <Section
-                title="Tweak Products"
+                title="Products"
                 nextSection="groceries"
                 previousSection="recipes"
                 setSection={setSection}
               >
-                {chosenProduct.map((prod, idx) => {
-                  return <div key={idx}>{prod.title}</div>;
+                {products.map((prod, idx) => {
+                  return (
+                    <div
+                      key={idx}
+                      className="grid grid-cols-2 gap-2 rounded-xl bg-primary-content p-2 shadow-md"
+                    >
+                      <div className="truncate whitespace-nowrap pl-2 font-bold">
+                        {prod.title}
+                      </div>
+                      <div className="flex justify-end">
+                        <button
+                          className="btn-error btn-sm btn-square btn rounded-none rounded-l-xl"
+                          onClick={() => {
+                            handleUpdateProducts({ [prod.id]: -1 });
+                          }}
+                        >
+                          -
+                        </button>
+                        <div className="w-full max-w-[4rem] bg-neutral-50 text-center shadow-inner">
+                          {prod.count}
+                        </div>
+                        <button
+                          className="btn-success btn-sm btn-square btn rounded-none rounded-r-xl"
+                          onClick={() => {
+                            handleUpdateProducts({ [prod.id]: 1 });
+                          }}
+                        >
+                          +
+                        </button>
+                      </div>
+                    </div>
+                  );
                 })}
               </Section>
             ) : (
@@ -221,7 +327,7 @@ function Plan() {
                 previousSection="products"
                 setSection={setSection}
               >
-                Stuff
+                {generateGroceryList()}
               </Section>
             ) : (
               ""
@@ -253,11 +359,49 @@ function Plan() {
                       <div className="flex-grow pl-3">{recipe.title}</div>
                       <button
                         className="btn-error btn-sm btn w-[80px]"
-                        onClick={() =>
+                        onClick={() => {
                           setChosenRecipes((prev) =>
                             prev.filter((r) => r != recipe.id)
-                          )
-                        }
+                          );
+                          handleUpdateProductsFromRecipes(recipe.id, -1);
+                        }}
+                      >
+                        Remove
+                      </button>
+                    </li>
+                  ))}
+              </ul>
+            </div>
+          </>
+        }
+      />
+
+      <FormCols2
+        panel={
+          <>
+            <h2>Products</h2>
+            <div className="mb-4 flex h-full flex-col gap-4 overflow-scroll rounded-2xl border p-3 shadow-inner">
+              {!products.find((prod) => prod.count > 0) ? (
+                <label className="m-2 rounded-lg border p-3 text-center text-lg font-bold">
+                  No Products Selected
+                </label>
+              ) : (
+                ""
+              )}
+              <ul className="m-0 pl-0">
+                {products
+                  .filter((product) => product.count > 0)
+                  .map((prod, idx) => (
+                    <li
+                      key={idx}
+                      className="m-2 flex list-none flex-row rounded-lg border bg-primary-content p-3 text-lg font-bold"
+                    >
+                      <div className="flex-grow pl-3">{prod.title}</div>
+                      <button
+                        className="btn-error btn-sm btn w-[80px]"
+                        onClick={() => {
+                          handleUpdateProducts({ [prod.id]: -1 });
+                        }}
                       >
                         Remove
                       </button>
