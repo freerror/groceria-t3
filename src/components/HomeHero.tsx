@@ -14,9 +14,14 @@ function HomeHero() {
           <h1 className="text-4xl">Features</h1>
           <ul className="list-inside list-disc">
             <li className="">Define your own recipes and grocery products</li>
-            <li>Generate grocery lists from selected recipes</li>
-            <li>Its your data: JSON Import and export</li>
-            <li>Share your grocery list with your shopper!</li>
+            <li>Generate markdown grocery lists</li>
+            <li>
+              Coming Soon:
+              <ul className="list-inside list-disc pl-5">
+                <li>Its your data: JSON Import and export</li>
+                <li>Share your grocery list with your shopper!</li>
+              </ul>
+            </li>
           </ul>
           <button className="btn-primary btn mt-5">Get Started</button>
         </div>
