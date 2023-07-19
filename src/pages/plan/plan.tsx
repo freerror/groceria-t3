@@ -43,11 +43,11 @@ function Section(props: {
   return (
     <div className="flex h-full flex-col justify-between">
       <div className="flex justify-between">
-        <h2 className="my-4">{props.title}</h2>
+        <h2 className="my-4 truncate">{props.title}</h2>
         {props.onFilter !== undefined ? (
           <input
             type="text"
-            className="m-4 rounded-lg border-2 p-2 shadow-inner"
+            className="m-3 max-h-10 min-w-0 rounded-lg border-[1px] p-2 shadow-inner"
             placeholder="Filter"
             onChange={(e) => {
               if (props.onFilter) {
