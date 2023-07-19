@@ -37,12 +37,27 @@ function Section(props: {
   nextSection?: SectionNames;
   previousSection?: SectionNames;
   children: ReactElement | string | ReactElement[] | undefined;
+  onFilter?: (a: string) => void | undefined;
   setSection: (section: SectionNames) => void;
 }) {
   return (
     <div className="flex h-full flex-col justify-between">
-      <div>
-        <h2 className="mt-0">{props.title}</h2>
+      <div className="flex justify-between">
+        <h2 className="my-4">{props.title}</h2>
+        {props.onFilter !== undefined ? (
+          <input
+            type="text"
+            className="m-4 rounded-lg border-2 p-2 shadow-inner"
+            placeholder="Filter"
+            onChange={(e) => {
+              if (props.onFilter) {
+                props.onFilter(e.target.value);
+              }
+            }}
+          />
+        ) : (
+          ""
+        )}
       </div>
       <div className="mb-4 flex h-full flex-col gap-3 overflow-scroll rounded-2xl border p-3 shadow-inner">
         {props.children}
@@ -79,6 +94,8 @@ function Plan() {
   const [section, setSection] = useState<SectionNames>("recipes");
   const [chosenRecipes, setChosenRecipes] = useState<string[]>([]);
   const [products, setProducts] = useState<CountableProduct[]>([]);
+  const [recipeFilter, setRecipeFilter] = useState("");
+  const [prodFilter, setProdFilter] = useState("");
 
   const productData = api.product.getAll.useQuery().data || [];
   const recipeProducts = api.recipeRelations.getAll.useQuery().data || [];
@@ -205,74 +222,83 @@ function Plan() {
               <Section
                 title="Choose Recipes"
                 nextSection="products"
+                onFilter={(a) => {
+                  void setRecipeFilter(a);
+                }}
                 setSection={setSection}
               >
-                {recipes.map((recipe, idx) => {
-                  const ingreds: Product[] = [];
-                  recipeProducts
-                    ?.filter((rel) => rel.recipeId === recipe.id)
-                    .forEach((rel) => {
-                      const found = productData.find(
-                        (prod) => prod.id === rel.productId
-                      );
-                      if (found) ingreds.push(found);
-                    });
-                  ingreds.sort((a, b) => a.title.localeCompare(b.title));
-                  const ingredTitles: string[] = ingreds.map((ing) =>
-                    ing ? ing.title : "Error"
-                  );
+                {recipes
+                  .filter((recipe) =>
+                    recipe.title
+                      .toLowerCase()
+                      .includes(recipeFilter.toLowerCase())
+                  )
+                  .map((recipe, idx) => {
+                    const ingreds: Product[] = [];
+                    recipeProducts
+                      ?.filter((rel) => rel.recipeId === recipe.id)
+                      .forEach((rel) => {
+                        const found = productData.find(
+                          (prod) => prod.id === rel.productId
+                        );
+                        if (found) ingreds.push(found);
+                      });
+                    ingreds.sort((a, b) => a.title.localeCompare(b.title));
+                    const ingredTitles: string[] = ingreds.map((ing) =>
+                      ing ? ing.title : "Error"
+                    );
 
-                  return (
-                    <div
-                      key={idx}
-                      className="flex h-[140px] rounded-xl bg-primary-content shadow-xl"
-                    >
-                      <figure className="m-0 h-[140px] w-[100px] shrink-0 rounded-l-xl rounded-r-none">
-                        <Image
-                          src="/img/recipe_generic.jpg"
-                          alt="Recipe"
-                          width={200}
-                          height={280}
-                        />
-                      </figure>
-                      <div className="flex flex-shrink flex-grow flex-col items-start justify-start overflow-hidden px-1">
-                        <div className="w-full">
-                          <h3 className="m-0 truncate whitespace-nowrap">
-                            {recipe.title}
-                          </h3>
+                    return (
+                      <div
+                        key={idx}
+                        className="flex h-[140px] rounded-xl bg-primary-content shadow-xl"
+                      >
+                        <figure className="m-0 h-[140px] w-[100px] shrink-0 rounded-l-xl rounded-r-none">
+                          <Image
+                            src="/img/recipe_generic.jpg"
+                            alt="Recipe"
+                            width={200}
+                            height={280}
+                          />
+                        </figure>
+                        <div className="flex flex-shrink flex-grow flex-col items-start justify-start overflow-hidden px-1">
+                          <div className="w-full">
+                            <h3 className="m-0 truncate whitespace-nowrap">
+                              {recipe.title}
+                            </h3>
+                          </div>
+                          <div className="mb-2 h-full w-full overflow-scroll rounded-lg pl-1 pr-2 pt-2 shadow-inner">
+                            <p className="m-0 text-xs font-thin">
+                              {ingredTitles.join(", ") + "."}
+                            </p>
+                          </div>
+                          {chosenRecipes.includes(recipe.id) ? (
+                            <button
+                              className="btn-error btn-sm btn mb-2 ml-auto mr-2 mt-auto w-[80px]"
+                              onClick={() => {
+                                setChosenRecipes((prev) =>
+                                  prev.filter((r) => r != recipe.id)
+                                );
+                                handleUpdateProductsFromRecipes(recipe.id, -1);
+                              }}
+                            >
+                              Remove
+                            </button>
+                          ) : (
+                            <button
+                              className="btn-success btn-sm btn mb-2 ml-auto mr-2 mt-auto w-[80px]"
+                              onClick={() => {
+                                handleChooseRecipe(recipe.id);
+                                handleUpdateProductsFromRecipes(recipe.id);
+                              }}
+                            >
+                              Choose
+                            </button>
+                          )}
                         </div>
-                        <div className="mb-2 h-full w-full overflow-scroll rounded-lg pl-1 pr-2 pt-2 shadow-inner">
-                          <p className="m-0 text-xs font-thin">
-                            {ingredTitles.join(", ") + "."}
-                          </p>
-                        </div>
-                        {chosenRecipes.includes(recipe.id) ? (
-                          <button
-                            className="btn-error btn-sm btn mb-2 ml-auto mr-2 mt-auto w-[80px]"
-                            onClick={() => {
-                              setChosenRecipes((prev) =>
-                                prev.filter((r) => r != recipe.id)
-                              );
-                              handleUpdateProductsFromRecipes(recipe.id, -1);
-                            }}
-                          >
-                            Remove
-                          </button>
-                        ) : (
-                          <button
-                            className="btn-success btn-sm btn mb-2 ml-auto mr-2 mt-auto w-[80px]"
-                            onClick={() => {
-                              handleChooseRecipe(recipe.id);
-                              handleUpdateProductsFromRecipes(recipe.id);
-                            }}
-                          >
-                            Choose
-                          </button>
-                        )}
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
               </Section>
             ) : (
               ""
@@ -283,40 +309,49 @@ function Plan() {
                 nextSection="groceries"
                 previousSection="recipes"
                 setSection={setSection}
+                onFilter={(a) => {
+                  void setProdFilter(a);
+                }}
               >
-                {products.map((prod, idx) => {
-                  return (
-                    <div
-                      key={idx}
-                      className="grid grid-cols-2 gap-2 rounded-xl bg-primary-content p-2 shadow-md"
-                    >
-                      <div className="truncate whitespace-nowrap pl-2 font-bold">
-                        {prod.title}
-                      </div>
-                      <div className="flex justify-end">
-                        <button
-                          className="btn-error btn-sm btn-square btn rounded-none rounded-l-xl"
-                          onClick={() => {
-                            handleUpdateProducts({ [prod.id]: -1 });
-                          }}
-                        >
-                          -
-                        </button>
-                        <div className="w-full max-w-[4rem] bg-neutral-50 text-center shadow-inner">
-                          {prod.count}
+                {products
+                  .filter((product) =>
+                    product.title
+                      .toLowerCase()
+                      .includes(prodFilter.toLowerCase())
+                  )
+                  .map((prod, idx) => {
+                    return (
+                      <div
+                        key={idx}
+                        className="grid grid-cols-2 gap-2 rounded-xl bg-primary-content p-2 shadow-md"
+                      >
+                        <div className="truncate whitespace-nowrap pl-2 font-bold">
+                          {prod.title}
                         </div>
-                        <button
-                          className="btn-success btn-sm btn-square btn rounded-none rounded-r-xl"
-                          onClick={() => {
-                            handleUpdateProducts({ [prod.id]: 1 });
-                          }}
-                        >
-                          +
-                        </button>
+                        <div className="flex justify-end">
+                          <button
+                            className="btn-error btn-square btn-sm btn rounded-none rounded-l-xl"
+                            onClick={() => {
+                              handleUpdateProducts({ [prod.id]: -1 });
+                            }}
+                          >
+                            -
+                          </button>
+                          <div className="w-full max-w-[4rem] bg-neutral-50 text-center shadow-inner">
+                            {prod.count}
+                          </div>
+                          <button
+                            className="btn-success btn-square btn-sm btn rounded-none rounded-r-xl"
+                            onClick={() => {
+                              handleUpdateProducts({ [prod.id]: 1 });
+                            }}
+                          >
+                            +
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
               </Section>
             ) : (
               ""
