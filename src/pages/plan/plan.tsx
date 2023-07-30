@@ -1,7 +1,7 @@
 import { type Product } from "@prisma/client";
 import { type Section } from "@prisma/client";
 import Image from "next/image";
-import { type ReactElement, useState, useEffect } from "react";
+import { type ReactElement, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import gfm from "remark-gfm";
 import FormCols2 from "~/components/FormCols2";
@@ -91,26 +91,20 @@ type CountableProduct = { count: number } & Product & {
   };
 
 function Plan() {
-  const [section, setSection] = useState<SectionNames>("recipes");
-  const [chosenRecipes, setChosenRecipes] = useState<string[]>([]);
-  const [products, setProducts] = useState<CountableProduct[]>([]);
-  const [recipeFilter, setRecipeFilter] = useState("");
-  const [prodFilter, setProdFilter] = useState("");
-
-  const productData = api.product.getAll.useQuery().data || [];
   const recipeProducts = api.recipeRelations.getAll.useQuery().data || [];
   const recipes = api.recipe.getAll.useQuery().data || [];
+  const productData = api.product.getAll.useQuery().data || [];
 
-  useEffect(() => {
-    if (products.length === 0) {
-      setProducts(
-        productData.map((prod) => ({
-          count: 0,
-          ...prod,
-        }))
-      );
-    }
-  }, [products.length, productData]);
+  const [section, setSection] = useState<SectionNames>("recipes");
+  const [chosenRecipes, setChosenRecipes] = useState<string[]>([]);
+  const [products, setProducts] = useState<CountableProduct[]>(
+    productData.map((prod) => ({
+      count: 0,
+      ...prod,
+    }))
+  );
+  const [recipeFilter, setRecipeFilter] = useState("");
+  const [prodFilter, setProdFilter] = useState("");
 
   function handleNav(section: SectionNames) {
     setSection(section);
