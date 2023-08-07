@@ -72,8 +72,8 @@ function Header() {
               <li>
                 <a>Profile</a>
               </li>
-              <li>
-                <a>Settings</a>
+              <li onClick={handleClickMenuItem}>
+                <Link href="/importExport">Import / Export</Link>
               </li>
               <li>
                 <a onClick={() => void signOut()}>Logout</a>
