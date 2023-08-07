@@ -5,6 +5,9 @@ import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 export const productRouter = createTRPCRouter({
   getAll: protectedProcedure.query(({ ctx }) => {
     return ctx.prisma.product.findMany({
+      where: {
+        userId: ctx.session.user.id,
+      },
       include: {
         section: true,
       },
@@ -24,6 +27,7 @@ export const productRouter = createTRPCRouter({
           title: input.title,
           sectionId: input.sectionId,
           checkStock: input.checkStock,
+          userId: ctx.session.user.id,
         },
       });
     }),

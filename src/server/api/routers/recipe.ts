@@ -4,7 +4,11 @@ import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 
 export const recipeRouter = createTRPCRouter({
   getAll: protectedProcedure.query(({ ctx }) => {
-    return ctx.prisma.recipe.findMany();
+    return ctx.prisma.recipe.findMany({
+      where: {
+        userId: ctx.session.user.id,
+      },
+    });
   }),
   create: protectedProcedure
     .input(z.object({ title: z.string(), productIds: z.array(z.string()) }))
@@ -12,6 +16,7 @@ export const recipeRouter = createTRPCRouter({
       const recipe = await ctx.prisma.recipe.create({
         data: {
           title: input.title,
+          userId: ctx.session.user.id,
         },
       });
 
