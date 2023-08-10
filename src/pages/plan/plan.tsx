@@ -1,7 +1,7 @@
 import { type Product } from "@prisma/client";
 import { type Section } from "@prisma/client";
 import Image from "next/image";
-import { type ReactElement, useState } from "react";
+import { type ReactElement, useState, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
 import gfm from "remark-gfm";
 import FormCols2 from "~/components/FormCols2";
@@ -91,20 +91,26 @@ type CountableProduct = { count: number } & Product & {
   };
 
 function Plan() {
-  const recipeProducts = api.recipeRelations.getAll.useQuery().data || [];
-  const recipes = api.recipe.getAll.useQuery().data || [];
-  const productData = api.product.getAll.useQuery().data || [];
+  const recipeProducts = api.recipeRelations.getAll.useQuery().data ?? [];
+  const recipes = api.recipe.getAll.useQuery().data ?? [];
+  const productData = api.product.getAll.useQuery().data;
 
   const [section, setSection] = useState<SectionNames>("recipes");
   const [chosenRecipes, setChosenRecipes] = useState<string[]>([]);
-  const [products, setProducts] = useState<CountableProduct[]>(
-    productData.map((prod) => ({
-      count: 0,
-      ...prod,
-    }))
-  );
+  const [products, setProducts] = useState<CountableProduct[]>([]);
   const [recipeFilter, setRecipeFilter] = useState("");
   const [prodFilter, setProdFilter] = useState("");
+
+  useEffect(() => {
+    if (productData) {
+      setProducts(
+        productData.map((prod) => ({
+          count: 0,
+          ...prod,
+        }))
+      );
+    }
+  }, [productData]);
 
   function handleNav(section: SectionNames) {
     setSection(section);
@@ -232,7 +238,7 @@ function Plan() {
                     recipeProducts
                       ?.filter((rel) => rel.recipeId === recipe.id)
                       .forEach((rel) => {
-                        const found = productData.find(
+                        const found = productData?.find(
                           (prod) => prod.id === rel.productId
                         );
                         if (found) ingreds.push(found);
