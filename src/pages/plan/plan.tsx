@@ -134,10 +134,16 @@ function Plan() {
 
   function handleUpdateProducts(updates: { [key: string]: number }) {
     setProducts((prev) =>
-      prev.map((prod) => ({
-        ...prod,
-        count: prod.count + (updates[prod.id] || 0),
-      }))
+      prev.map((prod) => {
+        let newCount = prod.count + (updates[prod.id] || 0);
+        if (newCount < 0) {
+          newCount = 0;
+        }
+        return {
+          ...prod,
+          count: newCount,
+        };
+      })
     );
   }
 
