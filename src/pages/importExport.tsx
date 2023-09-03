@@ -2,7 +2,7 @@ import FormCols2 from "~/components/FormCols2";
 import FormPage from "~/components/FormPage";
 import { api } from "~/utils/api";
 
-interface GroceriaData {
+interface GroceriaAppData {
   products: {
     id: string;
     section: { title: string };
@@ -19,43 +19,40 @@ interface GroceriaData {
   }[];
 }
 
+let data: GroceriaAppData;
+
 function ImportExport() {
   const recipeProducts = api.recipeRelations.getAll.useQuery().data || [];
   const recipes = api.recipe.getAll.useQuery().data || [];
   const products = api.product.getAll.useQuery().data || [];
 
-  const createRecipes = api.recipe.createMany.useMutation({
+  const createSections = api.section.createMany.useMutation({
     onSuccess: (res) => {
-      console.log(`${res.count} recipes created`);
+      console.log(`${res.count} sections created, adding products...`);
+      handleCreateProducts();
     },
   });
 
   const createProducts = api.product.createMany.useMutation({
     onSuccess: (res) => {
-      console.log(`${res.count} products created`);
+      console.log(`${res.count} products created, adding recipes...`);
+      handleCreateRecipes();
     },
   });
 
-  const deleteProducts = api.product.deleteMany.useMutation({
+  const createRecipes = api.recipe.createMany.useMutation({
     onSuccess: (res) => {
-      console.log(`${res.count} products deleted`);
+      console.log(`${res.count} recipes created, done!`);
     },
   });
 
-  const createSections = api.section.createMany.useMutation({
-    onSuccess: (res) => {
-      console.log(`${res.count} sections created`);
-    },
-  });
-
-  function handleCreateSections(data: GroceriaData) {
+  function handleCreateSections() {
     const sections = data.products.map((product) => product.section.title);
     const uniqueSections = [...new Set(sections)];
-    console.log(uniqueSections);
     createSections.mutate(uniqueSections);
   }
 
-  function handleCreateProducts(data: GroceriaData) {
+  function handleCreateProducts() {
     const products = data.products.map((product) => ({
       title: product.title,
       sectionTitle: product.section.title,
@@ -64,7 +61,7 @@ function ImportExport() {
     createProducts.mutate(products);
   }
 
-  function handleCreateRecipes(data: GroceriaData) {
+  function handleCreateRecipes() {
     const recipes = data.recipes.map((recipe) => {
       const productTitles = data.recipeToProduct
         .filter((rel) => rel.recipeId === recipe.id)
@@ -77,7 +74,6 @@ function ImportExport() {
         productTitles: productTitles as string[],
       };
     });
-    console.log(recipes);
     createRecipes.mutate(recipes);
   }
 
@@ -107,11 +103,9 @@ function ImportExport() {
     const reader = new FileReader();
     reader.onload = (e) => {
       const json = e.target?.result;
-      const data = JSON.parse(json as string) as GroceriaData;
-      console.log(data);
-      handleCreateSections(data);
-      handleCreateProducts(data);
-      handleCreateRecipes(data);
+      data = JSON.parse(json as string) as GroceriaAppData;
+      console.log("Raw data: ", data);
+      handleCreateSections();
     };
     reader.readAsText(file);
   }

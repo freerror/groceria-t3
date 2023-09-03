@@ -49,23 +49,34 @@ export const recipeRouter = createTRPCRouter({
           userId,
         },
       });
+      // get subset of new recipes that don't already exist
       const filteredInput = input.filter(
         (recipe) => !existingTitles.includes(recipe.title)
       );
+      // create data to be inserted
       const data = filteredInput.map((recipe) => ({
         title: recipe.title,
         userId,
       }));
+      // INSERT data
       const res = await ctx.prisma.recipe.createMany({ data });
+
+      // Get the titles of the new recipes
       const newTitles = data.map((recipe) => recipe.title);
-      const allRecipes = (await getRecipes()).filter((recipe) =>
+      // Retrieve all the recipes, and filter to new recipes based on title
+      const allNewRecipes = (await getRecipes()).filter((recipe) =>
         newTitles.includes(recipe.title)
       );
+      // This array will hold all the relations between product and recipe to be inserted
       const newRelations: RecipeRelations[] = [];
+
+      // Loop over each recipe for the subset of new recipes that don't already exist
       filteredInput.forEach((recipe) => {
-        const recipeId = allRecipes.find(
+        // Get the actual recipe id by matching with title
+        const recipeId = allNewRecipes.find(
           (newRecipe) => recipe.title === newRecipe.title
         )?.id as string;
+        // Get array of (actual) product ids by comparing title in each recipe being looped over with the titles in products
         const productIds = recipe.productTitles.map(
           (productTitle) =>
             products.find((product) => product.title === productTitle)?.id
@@ -74,6 +85,7 @@ export const recipeRouter = createTRPCRouter({
           newRelations.push({ recipeId, productId })
         );
       });
+      console.log(newRelations);
       await ctx.prisma.recipeRelations.createMany({ data: newRelations });
       return res;
     }),

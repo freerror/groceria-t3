@@ -20,7 +20,6 @@ export const sectionRouter = createTRPCRouter({
         },
       });
       if (existingSection) {
-        console.log("existingSection", existingSection);
         return existingSection;
       }
       return ctx.prisma.section.create({
