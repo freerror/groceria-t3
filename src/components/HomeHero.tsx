@@ -1,4 +1,10 @@
+import { useSession } from "next-auth/react";
+import { signIn } from "next-auth/react";
+import Link from "next/link";
+
 function HomeHero() {
+  const { data: sessionData } = useSession();
+
   return (
     <div className="hero min-h-screen bg-super">
       <div className="hero-overlay bg-stone-500 bg-opacity-90"></div>
@@ -23,7 +29,22 @@ function HomeHero() {
               </ul>
             </li>
           </ul>
-          <button className="btn-primary btn mt-5">Get Started</button>
+          {sessionData?.user ? (
+            <>
+              <Link href="/plan/plan" className="btn-primary btn mt-5">
+                Get Started
+              </Link>
+            </>
+          ) : (
+            <>
+              <button
+                onClick={() => void signIn()}
+                className="btn-primary btn mt-5"
+              >
+                Sign In
+              </button>
+            </>
+          )}
         </div>
       </div>
     </div>
