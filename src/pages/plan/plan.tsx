@@ -1,6 +1,7 @@
 import { type Product } from "@prisma/client";
 import { type Section } from "@prisma/client";
 import Image from "next/image";
+import { useRouter } from "next/router";
 import { type ReactElement, useState, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
 import gfm from "remark-gfm";
@@ -37,6 +38,7 @@ function Section(props: {
   nextSection?: SectionNames;
   previousSection?: SectionNames;
   children: ReactElement | string | ReactElement[] | undefined;
+  filter?: string;
   onFilter?: (a: string) => void | undefined;
   setSection: (section: SectionNames) => void;
 }) {
@@ -49,6 +51,7 @@ function Section(props: {
             type="text"
             className="m-3 max-h-10 min-w-0 rounded-lg border-[1px] p-2 shadow-inner"
             placeholder="Filter"
+            value={props.filter || ""}
             onChange={(e) => {
               if (props.onFilter) {
                 props.onFilter(e.target.value);
@@ -95,10 +98,11 @@ function Plan() {
   const recipes = api.recipe.getAll.useQuery().data ?? [];
   const productData = api.product.getAll.useQuery().data;
 
+  const router = useRouter();
+
   const [section, setSection] = useState<SectionNames>("recipes");
   const [chosenRecipes, setChosenRecipes] = useState<string[]>([]);
   const [products, setProducts] = useState<CountableProduct[]>([]);
-  const [recipeFilter, setRecipeFilter] = useState("");
   const [prodFilter, setProdFilter] = useState("");
 
   useEffect(() => {
@@ -228,8 +232,12 @@ function Plan() {
               <Section
                 title="Choose Recipes"
                 nextSection="products"
+                filter={(router.query.recipeFilter as string) || ""}
                 onFilter={(a) => {
-                  void setRecipeFilter(a);
+                  void router.push({
+                    pathname: router.pathname,
+                    query: { recipeFilter: a },
+                  });
                 }}
                 setSection={setSection}
               >
@@ -237,7 +245,11 @@ function Plan() {
                   .filter((recipe) =>
                     recipe.title
                       .toLowerCase()
-                      .includes(recipeFilter.toLowerCase())
+                      .includes(
+                        (
+                          (router.query.recipeFilter as string) || ""
+                        ).toLowerCase()
+                      )
                   )
                   .map((recipe, idx) => {
                     const ingreds: Product[] = [];
@@ -316,14 +328,25 @@ function Plan() {
                 previousSection="recipes"
                 setSection={setSection}
                 onFilter={(a) => {
-                  void setProdFilter(a);
+                  void router.push({
+                    pathname: router.pathname,
+                    query: {
+                      productFilter: a,
+                      recipeFilter: (router.query.recipeFilter as string) || "",
+                    },
+                  });
                 }}
+                filter={(router.query.productFilter as string) || ""}
               >
                 {products
                   .filter((product) =>
                     product.title
                       .toLowerCase()
-                      .includes(prodFilter.toLowerCase())
+                      .includes(
+                        (
+                          (router.query.productFilter as string) || ""
+                        ).toLowerCase()
+                      )
                   )
                   .map((prod, idx) => {
                     return (
