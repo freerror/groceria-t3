@@ -236,7 +236,11 @@ function Plan() {
                 onFilter={(a) => {
                   void router.push({
                     pathname: router.pathname,
-                    query: { recipeFilter: a },
+                    query: {
+                      recipeFilter: a,
+                      productFilter:
+                        (router.query.productFilter as string) || "",
+                    },
                   });
                 }}
                 setSection={setSection}
