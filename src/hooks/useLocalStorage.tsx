@@ -1,33 +1,39 @@
-import { type Dispatch, type SetStateAction, useState, useEffect } from "react";
+import {
+  type Dispatch,
+  type SetStateAction,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 
-function useLocalStorage<S>(
+export default function useLocalStorage<T>(
   key: string,
-  initVal: S
-): [S, Dispatch<SetStateAction<S>>] {
-  // Initialize state with initVal or from localStorage
-  const [value, setValue] = useState<S>(() => {
-    // Check if window is defined
-    if (typeof window !== "undefined") {
-      // Get stored value from localStorage
-      const storedValue = window.localStorage.getItem(key);
-      // Parse stored value as S or use initVal
-      return storedValue ? (JSON.parse(storedValue) as S) : initVal;
-    }
-    // Return initVal if window is undefined
-    return initVal;
-  });
+  defaultValue: T
+): [T, Dispatch<SetStateAction<T>>] {
+  const isMounted = useRef(false);
+  const [value, setValue] = useState<T>(defaultValue);
 
-  // Update localStorage whenever value changes
   useEffect(() => {
-    // Check if window is defined
-    if (typeof window !== "undefined") {
-      // Set value to localStorage as JSON string
-      window.localStorage.setItem(key, JSON.stringify(value));
+    try {
+      const item = localStorage.getItem(key);
+      if (item) {
+        setValue(JSON.parse(item) as T);
+      }
+    } catch (e) {
+      console.log(e);
+    }
+    return () => {
+      isMounted.current = false;
+    };
+  }, [key]);
+
+  useEffect(() => {
+    if (isMounted.current) {
+      localStorage.setItem(key, JSON.stringify(value));
+    } else {
+      isMounted.current = true;
     }
   }, [key, value]);
 
-  // Return value and setValue as an array
   return [value, setValue];
 }
-
-export default useLocalStorage;
