@@ -3,12 +3,14 @@ import { type Section } from "@prisma/client";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/router";
+import { useClient } from "next/client";
 import { type ReactElement, useState, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
 import gfm from "remark-gfm";
 import FormCols2 from "~/components/FormCols2";
 import FormPage from "~/components/FormPage";
 import { api } from "~/utils/api";
+import useLocalStorage from "~/hooks/useLocalStorage";
 
 type SectionNames = "recipes" | "products" | "groceries";
 
@@ -102,12 +104,17 @@ function Plan() {
   const router = useRouter();
 
   const [section, setSection] = useState<SectionNames>("recipes");
-  const [chosenRecipes, setChosenRecipes] = useState<string[]>([]);
-  const [products, setProducts] = useState<CountableProduct[]>([]);
-  const [prodFilter, setProdFilter] = useState("");
+  const [chosenRecipes, setChosenRecipes] = useLocalStorage<string[]>(
+    "chosenRecipes",
+    []
+  );
+  const [products, setProducts] = useLocalStorage<CountableProduct[]>(
+    "products",
+    []
+  );
 
   useEffect(() => {
-    if (productData) {
+    if (productData && products.length === 0) {
       setProducts(
         productData.map((prod) => ({
           count: 0,
@@ -115,7 +122,7 @@ function Plan() {
         }))
       );
     }
-  }, [productData]);
+  }, [productData, products, setProducts]);
 
   function handleNav(section: SectionNames) {
     setSection(section);
