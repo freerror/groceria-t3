@@ -3,7 +3,6 @@ import { type Section } from "@prisma/client";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import { useClient } from "next/client";
 import { type ReactElement, useState, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
 import gfm from "remark-gfm";
