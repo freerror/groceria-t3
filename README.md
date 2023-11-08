@@ -9,6 +9,9 @@ Groceria is an online tool that lets you define your own groceries and recipes. 
 - Coming Soon:
     - Its your data: JSON Import and export
     - Share your grocery list with your shopper!
- 
+
+ # Tech stack
+
 Made with React.js · Next.js · Prisma ORM · tRPC
+
 See: [T3 Stack](https://create.t3.gg/)
