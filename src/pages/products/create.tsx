@@ -21,6 +21,7 @@ function Create() {
   const [sectionId, setSectionId] = useState<string | undefined | null>(null);
   const sectionOptions = useRef<HTMLSelectElement>(null);
   const [checkStock, setCheckStock] = useState<boolean>(false);
+  const [publicProduct, setPublicProduct] = useState<boolean>(false);
   const [productTitle, setProductTitle] = useState<string>("");
   // const { data: sessionData } = useSession();
   const createProduct = api.product.create.useMutation({
@@ -89,6 +90,13 @@ function Create() {
     if (sectionOptions.current)
       sectionOptions.current.value = product.sectionId || "";
     setCheckStock(product.checkStock);
+    setPublicProduct((prev) => {
+      if (product.userId === "") {
+        return true;
+      } else {
+        return false;
+      }
+    });
   }
   function handleSortSections() {
     console.log("Run", tableData);
@@ -130,6 +138,7 @@ function Create() {
         title: productTitle,
         sectionId,
         checkStock,
+        publicProduct,
       });
       setEditProductId(null);
     } else {
@@ -146,6 +155,7 @@ function Create() {
     setNewSectionTitle("");
     setNewSection(false);
     setCheckStock(false);
+    setPublicProduct(false);
     setSectionId(null);
     if (sectionOptions.current) sectionOptions.current.value = "Choose...";
     setProductTitle("");
@@ -284,6 +294,24 @@ function Create() {
                       checked={checkStock}
                       onChange={() => {
                         setCheckStock((p) => !p);
+                      }}
+                      className="checkbox checkbox-md"
+                    />
+                  </label>
+                </div>
+                <div className="rounded-lg border">
+                  <div className="rounded-t-lg bg-neutral-200 p-2">
+                    <label className="prose-sm">
+                      Make this a public item that website guests can see:
+                    </label>
+                  </div>
+                  <label className="label cursor-pointer p-2">
+                    <span className="label-text">Make this a public item</span>
+                    <input
+                      type="checkbox"
+                      checked={publicProduct}
+                      onChange={() => {
+                        setPublicProduct((p) => !p);
                       }}
                       className="checkbox checkbox-md"
                     />

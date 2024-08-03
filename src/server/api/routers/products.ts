@@ -1,37 +1,49 @@
 import { Product, Section } from "@prisma/client";
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 
 export const productRouter = createTRPCRouter({
-  getAll: protectedProcedure.query(({ ctx }) => {
+  getAll: publicProcedure.query(({ ctx }) => {
     return ctx.prisma.product.findMany({
       where: {
-        userId: ctx.session.user.id,
+        OR: [
+          {
+            userId: ctx.session?.user?.id,
+          },
+          {
+            userId: "",
+          },
+          {
+            userId: null,
+          },
+        ],
       },
       include: {
         section: true,
       },
     });
   }),
-  create: protectedProcedure
+  create: publicProcedure
     .input(
       z.object({
         title: z.string(),
         sectionId: z.string(),
         checkStock: z.boolean(),
+        publicProduct: z.boolean().optional().default(false),
       })
     )
     .mutation(async ({ ctx, input }) => {
+      const userId = input.publicProduct ? null : ctx.session?.user?.id;
       return ctx.prisma.product.create({
         data: {
           title: input.title,
           sectionId: input.sectionId,
           checkStock: input.checkStock,
-          userId: ctx.session.user.id,
+          userId: userId,
         },
       });
     }),
-  createMany: protectedProcedure
+  createMany: publicProcedure
     .input(
       z.array(
         z.object({
@@ -42,7 +54,7 @@ export const productRouter = createTRPCRouter({
       )
     )
     .mutation(async ({ ctx, input }) => {
-      const userId = ctx.session.user.id;
+      const userId = ctx.session?.user?.id;
       const existingTitles = (
         await ctx.prisma.product.findMany({
           where: {
@@ -55,7 +67,7 @@ export const productRouter = createTRPCRouter({
       );
       const sections = await ctx.prisma.section.findMany({
         where: {
-          userId: ctx.session.user.id,
+          userId: ctx.session?.user?.id,
         },
       });
       const data = newProducts.map((product) => ({
@@ -69,26 +81,29 @@ export const productRouter = createTRPCRouter({
 
       return ctx.prisma.product.createMany({ data });
     }),
-  update: protectedProcedure
+  update: publicProcedure
     .input(
       z.object({
         id: z.string(),
         title: z.string(),
         sectionId: z.string(),
         checkStock: z.boolean(),
+        publicProduct: z.boolean().optional().default(false),
       })
     )
     .mutation(async ({ ctx, input }) => {
+      const userId = input.publicProduct ? null : ctx.session?.user?.id;
       return ctx.prisma.product.update({
         where: { id: input.id },
         data: {
           title: input.title,
           sectionId: input.sectionId,
           checkStock: input.checkStock,
+          userId: userId,
         },
       });
     }),
-  delete: protectedProcedure
+  delete: publicProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
       return ctx.prisma.product.delete({
@@ -97,10 +112,10 @@ export const productRouter = createTRPCRouter({
         },
       });
     }),
-  deleteMany: protectedProcedure.mutation(async ({ ctx }) => {
+  deleteMany: publicProcedure.mutation(async ({ ctx }) => {
     return ctx.prisma.product.deleteMany({
       where: {
-        userId: ctx.session.user.id,
+        userId: ctx.session?.user?.id,
       },
     });
   }),
